@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SmartTasker (Flask)</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    .task-pending { color: #c0392b; } /* red */
+    .task-done { color: #27ae60; }    /* green */
+    .card { border-radius: 16px; }
+    .btn-round { border-radius: 999px; }
+    .divider { border-top: 1px dashed #e1e1e1; margin: 12px 0; }
+    .effort-badge { background: #f2f2f2; border-radius: 10px; padding: 2px 8px; font-size: 0.85rem;}
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h1 class="mb-1">🧠 SmartTasker</h1>
+    <p class="text-muted mb-4">Mood-aware task organizer (Flask)</p>
+
+    <div class="row g-4">
+      <!-- Left: Add & All Tasks -->
+      <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">➕ Add a Task</h5>
+            <form method="POST" action="/">
+              <input type="hidden" name="form_type" value="add" />
+              <div class="mb-3">
+                <label class="form-label">Task Title</label>
+                <input class="form-control" name="title" placeholder="e.g., Math HW" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Task Description</label>
+                <textarea class="form-control" name="description" rows="3" placeholder="e.g., 20 addition questions"></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Effort (1 = light, 5 = hard)</label>
+                <input type="range" class="form-range" name="effort" min="1" max="5" value="3" />
+              </div>
+              <button class="btn btn-primary btn-round">Add Task</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title mb-3">📋 All Tasks</h5>
+            {% if tasks %}
+              <div class="list-group">
+                {% for t in tasks %}
+                  <div class="list-group-item d-flex align-items-start justify-content-between">
+                    <div class="{% if t.done %}task-done{% else %}task-pending{% endif %}">
+                      <strong>{{ loop.index }}. {{ t.title }}</strong><br/>
+                      <em>{{ t.description }}</em><br/>
+                      <span class="effort-badge">Effort: {{ t.effort }}</span>
+                    </div>
+                    <div class="ms-3 d-flex gap-2">
+                      {% if not t.done %}
+                        <form method="POST" action="{{ url_for('mark_done', task_id=t.id, mood=mood) }}">
+                          <button class="btn btn-success btn-sm btn-round">✅ Done</button>
+                        </form>
+                      {% endif %}
+                      <form method="POST" action="{{ url_for('delete_task', task_id=t.id, mood=mood) }}">
+                        <button class="btn btn-outline-danger btn-sm btn-round">🗑️</button>
+                      </form>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-muted">No tasks yet. Add something above!</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Mood + Smart Order -->
+      <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">🧠 Your Current Mood</h5>
+            <form method="GET" action="/">
+              <div class="row g-2 align-items-end">
+                <div class="col-8">
+                  <label class="form-label">Select mood</label>
+                  <select class="form-select" name="mood">
+                    {% for m in moods %}
+                      <option value="{{ m }}" {% if m == mood %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-4">
+                  <button class="btn btn-secondary w-100 btn-round">Apply</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title mb-3">🎯 Smart Task Order (Based on Mood)</h5>
+            {% if smart_tasks %}
+              <ol class="mb-0">
+                {% for t in smart_tasks %}
+                  <li class="mb-2">
+                    <strong>{{ t.title }}</strong>
+                    <div class="text-muted small">{{ t.description }}</div>
+                    <span class="effort-badge">Effort: {{ t.effort }}</span>
+                  </li>
+                {% endfor %}
+              </ol>
+            {% else %}
+              <div class="text-muted">No pending tasks match this mood.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
